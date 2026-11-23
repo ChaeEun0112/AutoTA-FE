@@ -27,3 +27,5 @@ export * from "./TagChip";
 export * from "./TagInput";
 export * from "./Toast";
 export * from "./Toggle";
+export * from "./NotificationPanel";
+export * from "./Pagination";
