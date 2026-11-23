@@ -4,6 +4,12 @@ AutoTA FE 레포지토리입니다.
 
 AutoTA는 프로그래밍 과제를 자동으로 채점하는 서비스입니다. 화면을 만들기 전에 공통 컴포넌트를 먼저 정리했고, 그 위에 로그인 계열 화면과 학생 화면을 만들었습니다. 교수·관리자 화면은 준비 중입니다.
 
+## 프로젝트 문서
+
+- 팀 노션: [AutoTA](https://app.notion.com/p/AutoTA-3d8606cfd1b080d19e55e8d4c212b502?source=copy_link) (기획서, 기능 명세서, API 명세서, 화면별 담당자와 진행 현황)
+- 디자인: [AutoTA Figma Make](https://www.figma.com/make/OlfzBPA1OLLboDl6eOhRVD/AutoTA-Design)
+- GitHub 조직: [pproject-AutoTA](https://github.com/pproject-AutoTA)
+
 ## 기술 스택
 
 | 구분   | 사용                                                         |
@@ -32,23 +38,23 @@ npm run build   # 배포용 빌드 (타입 검사 포함)
 
 ### 화면 주소
 
-| 주소                   | 화면                                                         |
-| ---------------------- | ------------------------------------------------------------ |
-| `/login`               | 학생·교수 로그인                                             |
-| `/admin/login`         | 시스템 관리자 로그인                                         |
-| `/forgot-password`     | 비밀번호 찾기                                                |
-| `/contact-admin`       | 관리자에게 문의                                              |
-| `/student`             | 학생 홈                                                      |
-| `/student/join`        | 수업 참여                                                    |
-| `/student/problems`    | 문제 목록                                                    |
-| `/student/submit`      | 코드 제출 (`?problem=번호`로 문제 선택)                      |
-| `/student/results`     | 제출 및 채점 결과 목록                                       |
-| `/student/results/:id` | 채점 결과 상세                                               |
-| `/student/notices`     | 전체 공지 (`?notice=번호`로 공지 선택, 알림 클릭 시 이 주소) |
-| `/student/guide`       | 학생 이용 가이드 (사이드바 도움말 카드에서 이동)             |
-| `/professor`, `/admin` | 교수·시스템 관리자 화면 (준비 중, 임시 화면)                 |
-| `/components`          | 컴포넌트 갤러리                                              |
-| `/showcase`            | 서비스 화면 예시 (정식 화면으로 교체 예정)                   |
+| 주소                           | 화면                                                         |
+| ------------------------------ | ------------------------------------------------------------ |
+| `/login`                       | 학생·교수 로그인                                             |
+| `/admin/login`                 | 시스템 관리자 로그인                                         |
+| `/forgot-password`             | 비밀번호 찾기                                                |
+| `/contact-admin`               | 관리자에게 문의                                              |
+| `/student`                     | 학생 홈                                                      |
+| `/student/join`                | 수업 참여                                                    |
+| `/student/problems`            | 문제 목록                                                    |
+| `/student/submit`              | 코드 제출 (`?problem=번호`로 문제 선택)                      |
+| `/student/results`             | 제출 및 채점 결과 목록                                       |
+| `/student/results/:submissionId` | 채점 결과 상세                                             |
+| `/student/notices`             | 전체 공지 (`?notice=번호`로 공지 선택, 알림 클릭 시 이 주소) |
+| `/student/guide`               | 학생 이용 가이드 (사이드바 도움말 카드에서 이동)             |
+| `/professor`, `/admin`         | 교수·시스템 관리자 화면 (준비 중, 임시 화면)                 |
+| `/components`                  | 컴포넌트 갤러리                                              |
+| `/showcase`                    | 서비스 화면 예시 (정식 화면으로 교체 예정)                   |
 
 로그인은 아직 서버와 연결되어 있지 않습니다. 로그인 화면에서 학생을 선택하고 로그인하면 `/student`로 이동합니다.
 
@@ -154,7 +160,7 @@ API로 바꿀 자리에는 `// TODO: API` 주석을 남겨 두었습니다. 서�
 
 ### 서버 연동 계획 (Must 범위)
 
-API 명세서(Must 14개) 기준으로 아래 내용을 팀과 맞췄습니다. 서버 응답이 명세와 같다는 전제입니다.
+[팀 노션](https://app.notion.com/p/AutoTA-3d8606cfd1b080d19e55e8d4c212b502?source=copy_link)의 API 명세서(Must 14개) 기준으로 아래 내용을 팀과 맞췄습니다. 서버 응답이 명세와 같다는 전제입니다.
 
 - **점수**: Must 단계에서는 숨깁니다. 점수 열과 탭은 화면에서 빼고, 공개 기능은 이후 단계에서 붙입니다.
 - **과제 목록**: `GET /courses/{courseId}/assignments` 응답(과제와 그 안의 문제)으로 `/student` 아래에 과제 목록 화면을 추가합니다.
@@ -167,8 +173,8 @@ API 명세서(Must 14개) 기준으로 아래 내용을 팀과 맞췄습니다. 
 - PR은 `이름/main` ← `이름/작업이름` 으로 올리고, 본문에 `관련 이슈: #번호`와 화면 캡처를 넣습니다. 화면 캡처는 레포에 파일로 두지 않고 PR 본문에만 첨부합니다.
 - 커밋 메시지는 `feat:`, `fix:`, `refactor:`, `chore:`, `docs:`, `style:` 접두사를 씁니다.
 - 공통 컴포넌트(`src/components`) 변경은 화면 PR에 섞지 않고 별도 PR로 올립니다.
-- README 변경은 `김채은/docs` 브랜치로 올립니다.
-- 화면별 담당자와 진행 현황은 팀 노션 문서에서 관리합니다.
+- README 수정은 PR 없이 `main`에서 직접 합니다.
+- 화면별 담당자와 진행 현황은 [팀 노션](https://app.notion.com/p/AutoTA-3d8606cfd1b080d19e55e8d4c212b502?source=copy_link) 문서에서 관리합니다.
 
 ## 개발 메모
 
