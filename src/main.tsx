@@ -14,6 +14,17 @@ import {
 import { Button, ToastProvider } from "./components";
 import { AdminLogin, ContactAdmin, ForgotPassword, Login } from "./pages/auth";
 import { ComponentGallery } from "./pages/ComponentGallery";
+import {
+  StudentGuide,
+  StudentHome,
+  StudentJoin,
+  StudentLayout,
+  StudentNotices,
+  StudentProblems,
+  StudentResultDetail,
+  StudentResults,
+  StudentSubmit,
+} from "./pages/student";
 import { Showcase } from "./Showcase";
 
 /** 교수·관리자 화면이 만들어지기 전까지 쓰는 임시 화면. 실제 화면이 만들어지면 해당 라우트의 element만 교체한다. */
@@ -42,6 +53,21 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/contact-admin" element={<ContactAdmin />} />
+
+        {/* 학생: 공통 틀(StudentLayout) 안에 화면이 들어간다 */}
+        <Route path="/student" element={<StudentLayout />}>
+          <Route index element={<StudentHome />} />
+          <Route path="notices" element={<StudentNotices />} />
+          <Route path="guide" element={<StudentGuide />} />
+          <Route path="join" element={<StudentJoin />} />
+          <Route path="problems" element={<StudentProblems />} />
+          <Route path="submit" element={<StudentSubmit />} />
+          <Route path="results" element={<StudentResults />} />
+          <Route
+            path="results/:submissionId"
+            element={<StudentResultDetail />}
+          />
+        </Route>
 
         {/* TODO: 실제 화면 구현 후 교체 (교수·관리자: 박은아) */}
         <Route path="/professor" element={<Placeholder title="교수 화면" />} />
