@@ -13,6 +13,7 @@ export * from "./FormField";
 export * from "./IndexChip";
 export * from "./ListRow";
 export * from "./MetaStats";
+export * from "./Modal";
 export * from "./NotificationPanel";
 export * from "./NumberedSteps";
 export * from "./ProgressRing";
