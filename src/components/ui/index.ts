@@ -6,6 +6,7 @@ export * from "./Card";
 export * from "./Checkbox";
 export * from "./ConfirmModal";
 export * from "./DataTable";
+export * from "./DonutChart";
 export * from "./DateTimePicker";
 export * from "./EmptyState";
 export * from "./ErrorMessage";
