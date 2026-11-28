@@ -68,3 +68,15 @@ export async function request<T>(
   }
   return body.data;
 }
+
+/** 화면에 보여줄 오류 문구. 서버가 준 message를 그대로 쓰고, 연결이 안 되는 경우만 안내 문구를 쓴다 */
+export function errorMessage(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.code === "NETWORK")
+      return "서버에 연결할 수 없어요. 잠시 후 다시 시도해 주세요.";
+    if (err.code === "COMMON-500")
+      return "서버 오류가 발생했어요. 잠시 후 다시 시도해 주세요.";
+    return err.message;
+  }
+  return "잠시 후 다시 시도해 주세요.";
+}

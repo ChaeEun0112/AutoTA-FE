@@ -10,6 +10,8 @@ import {
   Pagination,
   useToast,
 } from "../../components";
+import { ApiError, errorMessage } from "../../api/client";
+import { joinCourse } from "../../api/enrollments";
 
 interface JoinedClass {
   id: number;
@@ -106,20 +108,34 @@ export function StudentJoin() {
   const [code, setCode] = useState("");
   const [error, setError] = useState<string>();
   const [page, setPage] = useState(1);
+  const [joining, setJoining] = useState(false);
 
   const pageCount = Math.max(1, Math.ceil(CLASSES.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
   const pageRows = CLASSES.slice(start, start + PAGE_SIZE);
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (joining) return;
     const value = code.trim();
     if (!/^[A-Z0-9]+(-[A-Z0-9]+)+$/.test(value))
       return setError("올바른 수업 코드 형식이 아니에요");
     setError(undefined);
-    // TODO: 수업 코드 확인·참여 API 연결 (value 전달)
-    toast("success", "수업 코드를 확인했어요. 수업에 참여했습니다.");
-    setCode("");
+    setJoining(true);
+    try {
+      const joined = await joinCourse(value);
+      toast("success", `${joined.name} 수업에 참여했어요.`);
+      setCode("");
+    } catch (err) {
+      const apiCode = err instanceof ApiError ? err.code : "";
+      if (apiCode === "COURSE-002")
+        setError("참여 코드에 해당하는 수업이 없어요");
+      else if (apiCode === "COURSE-003") setError("이미 참여한 수업이에요");
+      else if (apiCode === "COMMON-400") setError("수업 코드를 입력해 주세요");
+      else toast("error", errorMessage(err));
+    } finally {
+      setJoining(false);
+    }
   };
 
   return (
@@ -152,7 +168,7 @@ export function StudentJoin() {
               }}
               icon={<Code2 size={22} strokeWidth={1.75} />}
               action={
-                <Button type="submit" disabled={!code.trim()}>
+                <Button type="submit" loading={joining} disabled={!code.trim()}>
                   참여하기
                 </Button>
               }
