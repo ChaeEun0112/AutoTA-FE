@@ -45,6 +45,11 @@ export function NotificationPanel({
           모두 읽음
         </button>
       </div>
+      {items.length === 0 && (
+        <p className="m-0 px-[26px] py-10 text-center text-sm leading-5 text-fg-secondary">
+          새 알림이 없어요.
+        </p>
+      )}
       {items.map((n) => (
         <button
           key={n.id}

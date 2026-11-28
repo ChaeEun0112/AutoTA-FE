@@ -108,7 +108,7 @@ export function AuthLayout({ children, onSubmit }: AuthLayoutProps) {
               ))}
             </ul>
             <div className="mt-8 text-xs leading-4 text-[#7F90B5]">
-              © 2025 AutoTA · Automated Teaching Assistant
+              © {new Date().getFullYear()} AutoTA · Automated Teaching Assistant
             </div>
           </div>
         </aside>
