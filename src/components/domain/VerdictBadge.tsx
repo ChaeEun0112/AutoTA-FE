@@ -1,10 +1,10 @@
 import { Flag } from "lucide-react";
 import { Badge, type Tone } from "../ui";
 
-export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "FLAG";
+export type Verdict = "AC" | "WA" | "TLE" | "MLE" | "RE" | "SKIPPED" | "FLAG";
 
 const VERDICT_TONE: Record<Verdict, Tone> = {
-  AC: "success", WA: "danger", TLE: "amber", MLE: "amber", RE: "neutral", FLAG: "flag",
+  AC: "success", WA: "danger", TLE: "amber", MLE: "amber", RE: "neutral", SKIPPED: "neutral", FLAG: "flag",
 };
 
 /* ============ VerdictBadge ============

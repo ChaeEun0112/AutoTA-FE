@@ -1,3 +1,4 @@
+import { FEATURES } from "../../features";
 import { useEffect, useState } from "react";
 import {
   BookOpen,
@@ -82,7 +83,9 @@ export function StudentLayout() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [bellOpen, setBellOpen] = useState(false);
-  const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState(
+    FEATURES.notices ? INITIAL_NOTIFICATIONS : [],
+  );
 
   // 로그인 API 응답으로 저장해 둔 학생 정보
   const me = getUser();

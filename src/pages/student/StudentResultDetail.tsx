@@ -22,7 +22,7 @@ import type {
   TestcaseResult,
 } from "../../api/types";
 import { useLoad } from "../../api/useLoad";
-import { formatDateTime, isClosed } from "./format";
+import { formatDateTime, isClosed, parseKst } from "./format";
 
 /** 채점이 끝날 때까지 서버에 다시 물어보는 간격 (RES-02: 2초) */
 const POLL_MS = 2000;
@@ -39,6 +39,7 @@ const CIRCLE: Record<ApiVerdict, string> = {
   TLE: "bg-amber-bg text-amber-fg",
   MLE: "bg-amber-bg text-amber-fg",
   RE: "bg-neutral-bg text-neutral-fg",
+  SKIPPED: "bg-neutral-bg text-neutral-fg",
 };
 
 const label = "text-sm leading-5 text-fg-secondary";
@@ -173,6 +174,10 @@ function ResultView({
   const history: SubmissionSummary[] | null = extra?.[1] ?? null;
 
   const failed = detail.status === "FAILED";
+  const inProgressNow = inProgress(detail.status);
+  /** 제출한 지 1분이 넘었는데 아직 채점 중이면 지연 안내만 보여 준다 (실패로 바꾸지 않는다) */
+  const waitedLong =
+    Date.now() - parseKst(detail.submittedAt).getTime() > 60_000;
   const latestFailed = history?.[0]?.status === "FAILED";
   const canResubmit =
     !!problem &&
@@ -198,6 +203,12 @@ function ResultView({
       {reconnecting && (
         <p role="status" className="m-0 text-sm leading-5 text-fg-secondary">
           연결이 불안정해요. 잠시 후 다시 시도하는 중이에요…
+        </p>
+      )}
+
+      {inProgressNow && waitedLong && (
+        <p role="status" className="m-0 text-sm leading-5 text-fg-secondary">
+          채점이 평소보다 오래 걸리고 있어요. 계속 확인하는 중이니 이 화면을 열어 두거나 나중에 다시 확인해 주세요.
         </p>
       )}
 
@@ -324,7 +335,7 @@ function Testcases({ detail }: { detail: SubmissionDetailData }) {
   return (
     <Card
       title="테스트케이스 결과"
-      subtitle="공개 케이스는 입출력을 볼 수 있고, 비공개 케이스는 결과만 보여요."
+      subtitle="공개 케이스는 입출력을 볼 수 있고, 비공개 케이스는 마감 후에 입출력까지 볼 수 있어요."
       action={
         done && (
           <span className="inline-flex h-8 items-center rounded-full bg-info-bg px-3.5 text-sm font-bold text-info-fg">
@@ -364,7 +375,9 @@ function Testcases({ detail }: { detail: SubmissionDetailData }) {
               name="비공개 케이스"
               cases={hiddenCases}
               open={open}
-              onToggle={() => {}}
+              // 마감 후에는 서버가 비공개 케이스의 입출력도 내려 준다 (마감 전에는 개수만)
+              reveal={!hasHiddenCount}
+              onToggle={(no) => setOpen(open === no ? null : no)}
             />
           )}
 
@@ -397,11 +410,14 @@ function CaseGroup({
   name,
   cases,
   open,
+  reveal = false,
   onToggle,
 }: {
   name: string;
   cases: TestcaseResult[];
   open: number | null;
+  /** true면 비공개 케이스도 입출력을 펼쳐 볼 수 있다 (마감 후) */
+  reveal?: boolean;
   onToggle: (no: number) => void;
 }) {
   const passed = cases.filter((c) => c.verdict === "AC").length;
@@ -423,9 +439,9 @@ function CaseGroup({
           <div className="flex items-center gap-5 px-[18px] py-3">
             <span className="w-8 text-xs text-fg-secondary">#{c.no}</span>
             <VerdictBadge verdict={c.verdict} />
-            <span className="text-xs text-fg-secondary">{c.timeMs} ms</span>
+            <span className="text-xs text-fg-secondary">{c.timeMs == null ? "-" : `${c.timeMs} ms`}</span>
             <span className="ml-auto">
-              {c.isPublic ? (
+              {c.isPublic || reveal ? (
                 <button
                   type="button"
                   aria-expanded={open === c.no}
@@ -444,8 +460,8 @@ function CaseGroup({
               )}
             </span>
           </div>
-          {/* 비공개 케이스는 입출력을 절대 그리지 않는다 */}
-          {c.isPublic && open === c.no && (
+          {/* 비공개 케이스는 서버가 입출력을 내려 준 마감 후에만 그린다 */}
+          {(c.isPublic || reveal) && open === c.no && (
             <div className="grid grid-cols-3 gap-3 px-[18px] pb-4">
               {[
                 ["입력", c.input],
@@ -457,6 +473,11 @@ function CaseGroup({
                   <pre className="m-0 rounded-lg bg-[#F6F7FA] px-4 py-3 font-mono text-sm leading-6 break-all whitespace-pre-wrap">
                     {v}
                   </pre>
+                  {k === "실제 출력" && (v?.length ?? 0) >= 1000 && (
+                    <p className="m-0 mt-1 text-xs text-fg-secondary">
+                      실제 출력은 앞부분 1KB까지만 보여요.
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

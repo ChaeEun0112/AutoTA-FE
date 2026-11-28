@@ -8,7 +8,7 @@ export const toUiStatus = (s: SubmissionApiStatus): UiStatus =>
   s === "PENDING" ? "QUEUED" : s;
 
 /** 서버 시각은 Asia/Seoul 기준에 오프셋이 없어서, 브라우저 시간대와 상관없이 한국 시간으로 읽는다 */
-const parseKst = (iso: string) =>
+export const parseKst = (iso: string) =>
   new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}+09:00`);
 
 /** 마감 시각이 지났는지. 마감 판정은 서버가 하고, 여기서는 화면 안내용으로만 쓴다 */

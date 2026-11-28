@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Badge,
+  Button,
   Card,
   DataTable,
   EmptyState,
@@ -10,11 +11,17 @@ import {
   PageHeader,
   Pagination,
   ScoreDisplay,
+  Skeleton,
   SubmissionStatusBadge,
   Tabs,
 } from "../../components";
 import { wrapControl } from "../../components/ui/classes";
-import { PROBLEMS, type Problem } from "./mockProblems";
+import { FEATURES } from "../../features";
+import {
+  errorMessage,
+  useStudentCourseData,
+  type Problem,
+} from "./courseData";
 
 type Filter = "all" | "open" | "result" | "closed";
 
@@ -31,7 +38,34 @@ const PAGE_SIZE = 6;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+function LoadState({ error }: { error: unknown }) {
+  if (error)
+    return (
+      <EmptyState
+        title="목록을 불러오지 못했어요"
+        description={errorMessage(error)}
+        action={
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            다시 시도
+          </Button>
+        }
+      />
+    );
+  return (
+    <div className="grid gap-5" aria-busy>
+      <Skeleton width="30%" height={48} />
+      <Skeleton height={582} />
+    </div>
+  );
+}
+
 export function StudentProblems() {
+  const { data, error } = useStudentCourseData();
+  if (!data) return <LoadState error={error} />;
+  return <ProblemsView problems={data.problems} />;
+}
+
+function ProblemsView({ problems }: { problems: Problem[] }) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
@@ -44,18 +78,18 @@ export function StudentProblems() {
     { value: "closed", label: "마감" },
   ].map((t) => ({
     ...t,
-    count: PROBLEMS.filter(FILTERS[t.value as Filter]).length,
+    count: problems.filter(FILTERS[t.value as Filter]).length,
   }));
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return PROBLEMS.filter(FILTERS[filter]).filter(
+    return problems.filter(FILTERS[filter]).filter(
       (p) =>
         !q ||
         p.title.toLowerCase().includes(q) ||
         p.course.toLowerCase().includes(q),
     );
-  }, [filter, query]);
+  }, [problems, filter, query]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -144,18 +178,22 @@ export function StudentProblems() {
                 width: "14%",
                 render: (r) => <SubmissionStatusBadge status={r.status} />,
               },
-              {
-                key: "score",
-                header: "점수",
-                width: "15%",
-                render: (r) => (
-                  <ScoreDisplay
-                    score={r.score}
-                    released={r.released}
-                    submitted={r.status !== "NONE"}
-                  />
-                ),
-              },
+              ...(FEATURES.score
+                ? [
+                  {
+                    key: "score",
+                    header: "점수",
+                    width: "15%",
+                    render: (r: Problem) => (
+                      <ScoreDisplay
+                        score={r.score}
+                        released={r.released}
+                        submitted={r.status !== "NONE"}
+                      />
+                    ),
+                  },
+                  ]
+                : []),
               {
                 key: "resubmit",
                 header: "재제출 가능 여부",

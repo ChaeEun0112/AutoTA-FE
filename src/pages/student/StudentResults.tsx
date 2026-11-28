@@ -3,6 +3,7 @@ import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   Badge,
+  Button,
   Card,
   DataTable,
   EmptyState,
@@ -10,20 +11,29 @@ import {
   PageHeader,
   Pagination,
   ScoreDisplay,
+  Skeleton,
   Tabs,
   VerdictBadge,
 } from "../../components";
 import { wrapControl } from "../../components/ui/classes";
-import { SUBMISSIONS, type Submission } from "./mockSubmissions";
+import { FEATURES } from "../../features";
+import {
+  errorMessage,
+  useStudentCourseData,
+  type Submission,
+} from "./courseData";
 
-type Filter = "all" | "released" | "unreleased" | "grading";
+type Filter = "all" | "released" | "unreleased" | "grading" | "done" | "failed";
 
 /** 탭별로 어떤 제출을 보여줄지 */
 const FILTERS: Record<Filter, (s: Submission) => boolean> = {
   all: () => true,
   released: (s) => s.released,
-  unreleased: (s) => !s.released && s.stage !== "GRADING",
+  unreleased: (s) =>
+    !s.released && s.stage !== "GRADING" && s.stage !== "FAILED",
   grading: (s) => s.stage === "GRADING",
+  done: (s) => s.stage === "REVIEWING" || s.stage === "REVIEWED",
+  failed: (s) => s.stage === "FAILED",
 };
 
 /** 한 페이지에 보여줄 제출 수 */
@@ -31,9 +41,38 @@ const PAGE_SIZE = 5;
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+function LoadState({ error }: { error: unknown }) {
+  if (error)
+    return (
+      <EmptyState
+        title="목록을 불러오지 못했어요"
+        description={errorMessage(error)}
+        action={
+          <Button variant="secondary" onClick={() => window.location.reload()}>
+            다시 시도
+          </Button>
+        }
+      />
+    );
+  return (
+    <div className="grid gap-5" aria-busy>
+      <Skeleton width="30%" height={48} />
+      <Skeleton height={582} />
+    </div>
+  );
+}
+
+export function StudentResults() {
+  const { data, error } = useStudentCourseData();
+  if (!data) return <LoadState error={error} />;
+  return <ResultsView submissions={data.submissions} />;
+}
+
 /** 교수 평가 칸 */
 function ReviewBadge({ s }: { s: Submission }) {
   if (s.stage === "GRADING") return <Badge tone="info">채점 중</Badge>;
+  if (s.stage === "FAILED") return <Badge tone="danger">채점 실패</Badge>;
+  if (!FEATURES.review) return <Badge tone="success">채점 완료</Badge>;
   if (s.stage === "REVIEWING") return <Badge tone="flag">교수 검토 중</Badge>;
   return s.released ? (
     <Badge tone="success">평가 완료</Badge>
@@ -42,31 +81,39 @@ function ReviewBadge({ s }: { s: Submission }) {
   );
 }
 
-export function StudentResults() {
+function ResultsView({ submissions }: { submissions: Submission[] }) {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<Filter>("all");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
 
-  const tabs = [
-    { value: "all", label: "전체" },
-    { value: "released", label: "점수 공개" },
-    { value: "unreleased", label: "점수 공개 전" },
-    { value: "grading", label: "채점 중" },
-  ].map((t) => ({
+  const tabs = (FEATURES.score
+    ? [
+        { value: "all", label: "전체" },
+        { value: "released", label: "점수 공개" },
+        { value: "unreleased", label: "점수 공개 전" },
+        { value: "grading", label: "채점 중" },
+      ]
+    : [
+        { value: "all", label: "전체" },
+        { value: "grading", label: "채점 중" },
+        { value: "done", label: "채점 완료" },
+        { value: "failed", label: "채점 실패" },
+      ]
+  ).map((t) => ({
     ...t,
-    count: SUBMISSIONS.filter(FILTERS[t.value as Filter]).length,
+    count: submissions.filter(FILTERS[t.value as Filter]).length,
   }));
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return SUBMISSIONS.filter(FILTERS[filter]).filter(
+    return submissions.filter(FILTERS[filter]).filter(
       (s) =>
         !q ||
         s.title.toLowerCase().includes(q) ||
         s.course.toLowerCase().includes(q),
     );
-  }, [filter, query]);
+  }, [submissions, filter, query]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
   const start = (page - 1) * PAGE_SIZE;
@@ -168,17 +215,21 @@ export function StudentResults() {
                     </strong>
                   ),
               },
-              {
-                key: "score",
-                header: "공개 점수",
-                width: "14%",
-                render: (r) => (
-                  <ScoreDisplay score={r.score} released={r.released} />
-                ),
-              },
+              ...(FEATURES.score
+                ? [
+                  {
+                    key: "score",
+                    header: "공개 점수",
+                    width: "14%",
+                    render: (r: Submission) => (
+                      <ScoreDisplay score={r.score} released={r.released} />
+                    ),
+                  },
+                ]
+                : []),
               {
                 key: "review",
-                header: "교수 평가",
+                header: FEATURES.review ? "교수 평가" : "채점 상태",
                 render: (r) => <ReviewBadge s={r} />,
               },
             ]}
