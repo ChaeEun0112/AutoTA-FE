@@ -26,6 +26,7 @@ import {
   StudentSubmit,
 } from "./pages/student";
 import { Showcase } from "./Showcase";
+import { RequireAuth } from "./auth/RequireAuth";
 
 /** 교수·관리자 화면이 만들어지기 전까지 쓰는 임시 화면. 실제 화면이 만들어지면 해당 라우트의 element만 교체한다. */
 function Placeholder({ title }: { title: string }) {
@@ -55,26 +56,32 @@ createRoot(document.getElementById("root")!).render(
         <Route path="/contact-admin" element={<ContactAdmin />} />
 
         {/* 학생: 공통 틀(StudentLayout) 안에 화면이 들어간다 */}
-        <Route path="/student" element={<StudentLayout />}>
-          <Route index element={<StudentHome />} />
-          <Route path="notices" element={<StudentNotices />} />
-          <Route path="guide" element={<StudentGuide />} />
-          <Route path="join" element={<StudentJoin />} />
-          <Route path="problems" element={<StudentProblems />} />
-          <Route path="submit" element={<StudentSubmit />} />
-          <Route path="results" element={<StudentResults />} />
-          <Route
-            path="results/:submissionId"
-            element={<StudentResultDetail />}
-          />
+        <Route element={<RequireAuth role="STUDENT" />}>
+          <Route path="/student" element={<StudentLayout />}>
+            <Route index element={<StudentHome />} />
+            <Route path="notices" element={<StudentNotices />} />
+            <Route path="guide" element={<StudentGuide />} />
+            <Route path="join" element={<StudentJoin />} />
+            <Route path="problems" element={<StudentProblems />} />
+            <Route path="submit" element={<StudentSubmit />} />
+            <Route path="results" element={<StudentResults />} />
+            <Route
+              path="results/:submissionId"
+              element={<StudentResultDetail />}
+            />
+          </Route>
         </Route>
 
         {/* TODO: 실제 화면 구현 후 교체 (교수·관리자: 박은아) */}
-        <Route path="/professor" element={<Placeholder title="교수 화면" />} />
-        <Route
-          path="/admin"
-          element={<Placeholder title="시스템 관리자 화면" />}
-        />
+        <Route element={<RequireAuth role="PROFESSOR" />}>
+          <Route path="/professor" element={<Placeholder title="교수 화면" />} />
+        </Route>
+        <Route element={<RequireAuth role="ADMIN" />}>
+          <Route
+            path="/admin"
+            element={<Placeholder title="시스템 관리자 화면" />}
+          />
+        </Route>
 
         <Route path="/components" element={<ComponentGallery />} />
         {/* 서비스 화면 예시(나중에 정식 화면으로 교체) */}

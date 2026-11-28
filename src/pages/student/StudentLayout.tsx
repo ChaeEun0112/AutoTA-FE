@@ -16,6 +16,7 @@ import {
   type MenuItem,
   type NotificationItem,
 } from "../../components";
+import { clearAuth, getUser } from "../../auth/storage";
 
 const MENU: MenuItem[] = [
   {
@@ -83,8 +84,12 @@ export function StudentLayout() {
   const [bellOpen, setBellOpen] = useState(false);
   const [notifications, setNotifications] = useState(INITIAL_NOTIFICATIONS);
 
-  // TODO: 로그인 API 연결 후 로그인한 학생 정보로 교체
-  const user = { name: "김민준", sub: "컴퓨터공학과 · 20240123" };
+  // 로그인 API 응답으로 저장해 둔 학생 정보
+  const me = getUser();
+  const user = {
+    name: me?.name ?? "",
+    sub: me?.studentNo ? `학번 ${me.studentNo}` : (me?.email ?? ""),
+  };
 
   // 화면을 옮기면 알림 패널을 닫는다
   useEffect(() => setBellOpen(false), [pathname]);
@@ -146,7 +151,10 @@ export function StudentLayout() {
       menuItems={MENU}
       activePath={activePath}
       onNavigate={navigate}
-      onLogout={() => navigate("/login")} // TODO: 로그아웃 API 연결
+      onLogout={() => {
+        clearAuth(); // 로그아웃 API는 없다. 저장된 토큰과 사용자 정보만 지운다
+        navigate("/login", { replace: true });
+      }}
       helpCard={<SidebarHelpCard onClick={() => navigate("/student/guide")} />}
     >
       <Outlet />

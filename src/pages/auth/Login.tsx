@@ -5,10 +5,14 @@ import {
   AuthLayout,
   Button,
   Checkbox,
+  ErrorMessage,
   FormField,
   SelectCard,
 } from "../../components";
 import { linkButtonBase } from "../../components/ui/classes";
+import { describeLoginError, login } from "../../api/auth";
+import { saveAuth } from "../../auth/storage";
+import { HOME } from "../../auth/home";
 
 type LoginRole = "student" | "professor";
 
@@ -19,18 +23,37 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [keep, setKeep] = useState(false);
   const [error, setError] = useState<{ email?: string; password?: string }>({});
+  const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string>();
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return;
+    setFormError(undefined);
+
     const next: typeof error = {};
     if (!email.trim()) next.email = "이메일을 입력하세요";
     else if (!/^\S+@\S+\.\S+$/.test(email))
       next.email = "올바른 이메일 형식을 입력하세요";
     if (!password) next.password = "비밀번호를 입력하세요";
     setError(next);
-    if (Object.keys(next).length === 0) {
-      // TODO: 로그인 API 연결 (role, email, password, keep 전달). 연결 전에는 역할별 화면으로 바로 이동
-      navigate(role === "student" ? "/student" : "/professor");
+    if (Object.keys(next).length > 0) return;
+
+    setLoading(true);
+    try {
+      const data = await login({ email: email.trim(), password });
+      if (data.user.role === "ADMIN") {
+        setFormError("관리자 계정은 시스템 관리자 로그인에서 접속해 주세요");
+        return;
+      }
+      saveAuth(data.accessToken, data.user, keep);
+      navigate(HOME[data.user.role], { replace: true });
+    } catch (err) {
+      const { fields, form } = describeLoginError(err);
+      setError(fields);
+      setFormError(form);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,6 +113,8 @@ export function Login() {
         />
       </div>
 
+      {formError && <ErrorMessage>{formError}</ErrorMessage>}
+
       <div className="mt-3.5 mb-5 flex items-center justify-between">
         <Checkbox checked={keep} onChange={setKeep} label="로그인 상태 유지" />
         <button
@@ -102,7 +127,7 @@ export function Login() {
       </div>
 
       <div className="[&>button]:w-full">
-        <Button type="submit" size="lg">
+        <Button type="submit" size="lg" loading={loading}>
           로그인
           <ArrowRight size={20} strokeWidth={1.75} />
         </Button>
